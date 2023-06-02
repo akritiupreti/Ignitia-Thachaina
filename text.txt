@@ -1,3 +1,12 @@
-ThiS text ShOuld nOt cOntain any lOwercaSe O and S becauSe we have nOt yet cOnfigured it aS we are Still wOrking On it
-my name iS Akriti
-UPretI 21BCE3878
+This is a demo of our project
+This is typed by the user in a text file 
+The program will now take this text file as the input and generate an image with this text written in the users handwriting
+
+21BCE3878 Akriti Upreti
+21BCE3824 Biraj Chhetri
+
+Team 3
+Thachaina
+
+
+As you can see we still have a lot of room for improvement but we will get there in time

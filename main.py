@@ -1,31 +1,125 @@
-import pytesseract
 import cv2
 import numpy as np
-import os
+from PIL import Image, ImageDraw, ImageFont
 
+characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+tallchars = "tlbfhkd"
+botchars = "jgypq"
+alphabet_images = {}
 
-image = cv2.imread("test.png")
+for char in characters:
+    if char.islower():
+        alphabet_images[char + "_lower"] = Image.open("Characters/" + char + "_lower.jpg")
+    else:
+        alphabet_images[char] = Image.open("Characters/" + char + ".jpg")
 
-text = pytesseract.image_to_boxes(image).split('\n')
-for x in range(len(text)):
-    text[x] = text[x].split()
+alphabet_images[" "] = Image.open("Characters/space.jpg")
 
-print(text)
-height, width, _ = image.shape
+# Define the dimensions of each alphabet image
+alphabet_image_width_upper = 50
+alphabet_image_height_upper = 50
 
+alphabet_image_width_lower = 30
+alphabet_image_height_lower = 30
+
+# Define the spacing between each alphabet image
+horizontal_spacing = 20
+vertical_spacing = 10
+
+# Calculate the dimensions of the final combined image
+output_width = 2480
+output_height = 3507
+
+left_margin = 30
+right_margin = 30
+top_margin = 30
+bottom_margin = 20
+
+''' 
+output_width = (alphabet_image_width_upper + horizontal_spacing) * len(user_text)
+output_height = alphabet_image_height
 '''
-a = text[0]
-x, y, w, h = int(a[1]), int(a[2]), int(a[3]), int(a[4])
-crop = image[x,y, x+w:y+h]
-cv2.imshow('img',crop)
-cv2.waitKey(0)
+# Create a blank canvas for the combined image
+combined_image = Image.new('RGB', (output_width, output_height), color='white')
+draw = ImageDraw.Draw(combined_image)
 
-for i in range(len(text)-1):
-    a = text[i]
-    x, y, w, h = int(a[1]), int(a[2]), int(a[3]), int(a[4])
-    cv2.rectangle(image, (x,height-y), (w, height-h), (50,50,255), 1)
+# Iterate over each character in the user's input text
 
-cv2.imshow('image',image)
-cv2.waitKey(0)
-cv2.imwrite("gello", image)
-'''
+y_position = 50
+# User input text
+f = open("text.txt", "r")
+lines = f.readlines()
+for user_text in lines:
+    x_position = 50
+    sentence = user_text.split()
+    for char in sentence:
+        total = x_position
+        for each_char in char:
+            if each_char.islower():
+                total += alphabet_image_width_lower + horizontal_spacing
+            else:
+                total += alphabet_image_width_upper + horizontal_spacing
+
+        if total > 2430:  # limit to go to next line
+            y_position += alphabet_image_height_upper + 50
+            x_position = 50
+
+        for each_char in char:
+            lower = False
+            tall = False
+            bot = False
+            digit = False
+
+            if each_char.islower():
+                if each_char in tallchars:
+                    tall = True
+                elif each_char in botchars:
+                    bot = True
+                each_char += "_lower"
+                lower = True
+
+            # Retrieve the corresponding alphabet image for the character
+            alphabet_image = alphabet_images[each_char]
+
+            if alphabet_image:
+                # Resize the alphabet image to the desired dimensions
+                if lower:
+                    width = alphabet_image_width_lower
+
+                    if tall or bot:
+                        height = alphabet_image_height_upper
+                    else:
+                        height = alphabet_image_height_lower
+
+                else:
+                    width = alphabet_image_width_upper
+                    height = alphabet_image_height_upper
+
+                alphabet_image = alphabet_image.resize((width, height))
+
+                # Paste the alphabet image onto the combined image
+                if lower and not tall:
+                    if bot:
+                        combined_image.paste(alphabet_image, (x_position, y_position + 25))
+                    else:
+                        combined_image.paste(alphabet_image, (x_position, y_position + 15))
+                else:
+                    combined_image.paste(alphabet_image, (x_position, y_position))
+
+                if lower:
+                    horizontal_spacing = 5
+                else:
+                    horizontal_spacing = 10
+
+            # Update the x-position for the next alphabet image
+            x_position += width + horizontal_spacing
+
+        x_position += 35
+
+    y_position += (alphabet_image_height_upper + 50) * 2
+
+# Display the combined image
+
+combined_image.save("trial.png")
+combined_image.show()
+
