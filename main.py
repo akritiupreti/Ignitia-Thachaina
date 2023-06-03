@@ -1,125 +1,146 @@
-import cv2
-import numpy as np
-from PIL import Image, ImageDraw, ImageFont
+import sys
+import os
+from PyQt5.uic import loadUi
+from PyQt5 import QtWidgets
+from PyQt5.QtWidgets import QDialog, QApplication, QFileDialog, QLabel
+from PyQt5 import QtWidgets
+from OCR_and_Generator import OCR, main
+from PyQt5.QtGui import QPixmap
+import time
 
-characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
-tallchars = "tlbfhkd"
-botchars = "jgypq"
-alphabet_images = {}
 
-for char in characters:
-    if char.islower():
-        alphabet_images[char + "_lower"] = Image.open("Characters/" + char + "_lower.jpg")
-    else:
-        alphabet_images[char] = Image.open("Characters/" + char + ".jpg")
+class Home(QDialog):
+    def __init__(self):
+        super(Home, self).__init__()
+        loadUi("homescreen.ui", self)
+        self.proceedbutton.clicked.connect(self.start)
 
-alphabet_images[" "] = Image.open("Characters/space.jpg")
+    def start(self):
+        if os.path.exists("info"): # to check if user's handwriting is already stored
+            inputScreen = Input()
+            widget.addWidget(inputScreen)
+            widget.setCurrentIndex(widget.currentIndex() + 1)
+        else:
+            mainScreen = Main()
+            widget.addWidget(mainScreen)
+            widget.setCurrentIndex(widget.currentIndex()+1)
 
-# Define the dimensions of each alphabet image
-alphabet_image_width_upper = 50
-alphabet_image_height_upper = 50
 
-alphabet_image_width_lower = 30
-alphabet_image_height_lower = 30
+class Main(QDialog):
+    def __init__(self):
+        super(Main, self).__init__()
+        loadUi("mainscreen.ui", self)
+        self.uppercasebutton.clicked.connect(lambda: self.openPhoto(0))
+        self.lowercasebutton.clicked.connect(lambda: self.openPhoto(1))
+        self.numbersbutton.clicked.connect(lambda: self.openPhoto(2))
 
-# Define the spacing between each alphabet image
-horizontal_spacing = 20
-vertical_spacing = 10
+        self.files = [0, 0, 0]
 
-# Calculate the dimensions of the final combined image
-output_width = 2480
-output_height = 3507
+    def openPhoto(self, index):
+        dlg = QFileDialog()
+        name = dlg.getOpenFileName(self, 'Open file', 'D:\\Project\\Ignitia-App\\OCR_and_Generator\\Images', "Image files (*.jpg *.png *.jpeg)")
+        print(name)
+        ind = name[0].rfind("/")
+        self.files[index] = name[0][ind+1:]
+        print(self.files[0])
 
-left_margin = 30
-right_margin = 30
-top_margin = 30
-bottom_margin = 20
+        if 0 not in self.files:
+            popup = Popup()
+            widget.addWidget(popup)
+            widget.setCurrentIndex(widget.currentIndex()+1)
+            OCR.run(self.files)
+            os.mkdir("info")
+            inputScreen = Input()
+            widget.addWidget(inputScreen)
+            widget.setCurrentIndex(widget.currentIndex()+1)
 
-''' 
-output_width = (alphabet_image_width_upper + horizontal_spacing) * len(user_text)
-output_height = alphabet_image_height
-'''
-# Create a blank canvas for the combined image
-combined_image = Image.new('RGB', (output_width, output_height), color='white')
-draw = ImageDraw.Draw(combined_image)
 
-# Iterate over each character in the user's input text
+class Input(QDialog):
+    def __init__(self):
+        super(Input, self).__init__()
+        loadUi("inputscreen.ui", self)
+        self.uploadbutton.clicked.connect(self.openText)
 
-y_position = 50
-# User input text
-f = open("text.txt", "r")
-lines = f.readlines()
-for user_text in lines:
-    x_position = 50
-    sentence = user_text.split()
-    for char in sentence:
-        total = x_position
-        for each_char in char:
-            if each_char.islower():
-                total += alphabet_image_width_lower + horizontal_spacing
-            else:
-                total += alphabet_image_width_upper + horizontal_spacing
+        self.fname = ""
 
-        if total > 2430:  # limit to go to next line
-            y_position += alphabet_image_height_upper + 50
-            x_position = 50
+    def openText(self):
+        dlg = QFileDialog()
+        name = dlg.getOpenFileName(self, 'Open file', 'D:\\Project\\Ignitia-App\\OCR_and_Generator', "Text files (*.txt)")
+        print(name)
+        self.fname = name[0]
 
-        for each_char in char:
-            lower = False
-            tall = False
-            bot = False
-            digit = False
+        main.run(self.fname)
+        print("hello")
 
-            if each_char.islower():
-                if each_char in tallchars:
-                    tall = True
-                elif each_char in botchars:
-                    bot = True
-                each_char += "_lower"
-                lower = True
+        popup = Final()
+        widget.addWidget(popup)
+        widget.setCurrentIndex(widget.currentIndex() + 1)
 
-            # Retrieve the corresponding alphabet image for the character
-            alphabet_image = alphabet_images[each_char]
 
-            if alphabet_image:
-                # Resize the alphabet image to the desired dimensions
-                if lower:
-                    width = alphabet_image_width_lower
+class Final(QDialog):
+    def __init__(self):
+        super(Final, self).__init__()
+        loadUi("final.ui", self)
 
-                    if tall or bot:
-                        height = alphabet_image_height_upper
-                    else:
-                        height = alphabet_image_height_lower
+        while not os.path.exists("image.png"):
+            print("hello")
+            pass
 
-                else:
-                    width = alphabet_image_width_upper
-                    height = alphabet_image_height_upper
+        pix = QPixmap("image.png")
+        item = QtWidgets.QGraphicsPixmapItem(pix)
+        scene = QtWidgets.QGraphicsScene(self)
+        scene.addItem(item)
+        self.letterview.setScene(scene)
 
-                alphabet_image = alphabet_image.resize((width, height))
 
-                # Paste the alphabet image onto the combined image
-                if lower and not tall:
-                    if bot:
-                        combined_image.paste(alphabet_image, (x_position, y_position + 25))
-                    else:
-                        combined_image.paste(alphabet_image, (x_position, y_position + 15))
-                else:
-                    combined_image.paste(alphabet_image, (x_position, y_position))
+class Popup(QDialog):
+    def __init__(self):
+        super(Popup, self).__init__()
+        loadUi("popup.ui", self)
 
-                if lower:
-                    horizontal_spacing = 5
-                else:
-                    horizontal_spacing = 10
+        self.continuebutton.clicked.connect(self.proceed)
 
-            # Update the x-position for the next alphabet image
-            x_position += width + horizontal_spacing
+    def proceed(self):
+        while not os.path.exists("OCR_and_Generator/done.txt"):
+            time.sleep(3)
+            name = ""
+            for name in os.listdir("OCR_and_Generator"):
+                if "char" in name:
+                    break
 
-        x_position += 35
+            pix = QPixmap("OCR_and_Generator/" + name)
+            item = QtWidgets.QGraphicsPixmapItem(pix)
+            scene = QtWidgets.QGraphicsScene(self)
+            scene.addItem(item)
+            self.letterview.setScene(scene)
 
-    y_position += (alphabet_image_height_upper + 50) * 2
+            self.quelabel.setText("Is this " + name[-1] + "?")
+            text = self.inputchar.text()
 
-# Display the combined image
+            f = open("OCR_and_Generator/data.txt", "w")
+            if text == " ": # unrecognized
+                f.write("!")
+            elif text == "": # correct
+                f.write("NULL")
+            else: # update
+                f.write(text)
 
-combined_image.save("trial.png")
-combined_image.show()
+            f.close()
+
+
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+
+    homeScreen = Home()
+
+    widget = QtWidgets.QStackedWidget()
+    widget.addWidget(homeScreen)
+    widget.setFixedHeight(620)
+    widget.setFixedWidth(480)
+    widget.show()
+
+    try:
+        sys.exit(app.exec_())
+    except:
+        print("Exiting")
 
