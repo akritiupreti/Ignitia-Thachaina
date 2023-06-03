@@ -14,7 +14,7 @@
    <string>Dialog</string>
   </property>
   <property name="styleSheet">
-   <string notr="true">background-color: rgb(0, 77, 60);</string>
+   <string notr="true">background-color: qlineargradient(spread:pad, x1:0.483, y1:0.653773, x2:0.488, y2:0, stop:0 rgba(0, 0, 0, 255), stop:1 rgba(255, 255, 255, 255));</string>
   </property>
   <widget class="QGraphicsView" name="letterview">
    <property name="geometry">
@@ -29,15 +29,21 @@
   <widget class="QLabel" name="quelabel">
    <property name="geometry">
     <rect>
-     <x>170</x>
-     <y>10</y>
+     <x>160</x>
+     <y>20</y>
      <width>151</width>
      <height>41</height>
     </rect>
    </property>
    <property name="styleSheet">
-    <string notr="true">font: 14pt &quot;MS Shell Dlg 2&quot;;
-background-color: rgb(0, 170, 0);</string>
+    <string notr="true">font: 20pt &quot;Casandra&quot;;
+background-color: rgb(0, 170,  rgb(147, 196, 255));</string>
+   </property>
+   <property name="frameShape">
+    <enum>QFrame::WinPanel</enum>
+   </property>
+   <property name="lineWidth">
+    <number>2</number>
    </property>
    <property name="text">
     <string>Result</string>
@@ -52,11 +58,16 @@ background-color: rgb(0, 170, 0);</string>
      <x>84</x>
      <y>590</y>
      <width>321</width>
-     <height>20</height>
+     <height>21</height>
     </rect>
    </property>
    <property name="styleSheet">
-    <string notr="true">background-color: rgb(0, 170, 0);</string>
+    <string notr="true">font: 57 10pt &quot;Queensides&quot;;
+color: rgb(61,252,255);
+background-color: rgb(0, 170,  rgb(147, 196, 255));</string>
+   </property>
+   <property name="frameShape">
+    <enum>QFrame::Box</enum>
    </property>
    <property name="text">
     <string>This image has been saved to your device</string>
