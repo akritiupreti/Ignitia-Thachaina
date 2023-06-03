@@ -3,7 +3,7 @@ import os
 from PyQt5.uic import loadUi
 from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QDialog, QApplication, QFileDialog, QLabel
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets, QtGui
 from OCR_and_Generator import OCR, main
 from PyQt5.QtGui import QPixmap
 import time
@@ -38,21 +38,25 @@ class Main(QDialog):
 
     def openPhoto(self, index):
         dlg = QFileDialog()
-        name = dlg.getOpenFileName(self, 'Open file', 'D:\\Project\\Ignitia-App\\OCR_and_Generator\\Images', "Image files (*.jpg *.png *.jpeg)")
+        name = dlg.getOpenFileName(self, 'Open file', 'D:\\Project\\Ignitia-Thachaina\\OCR_and_Generator\\Images', "Image files (*.jpg *.png *.jpeg)")
         print(name)
         ind = name[0].rfind("/")
         self.files[index] = name[0][ind+1:]
         print(self.files[0])
 
         if 0 not in self.files:
+            OCR.run(self.files)
+
             popup = Popup()
             widget.addWidget(popup)
             widget.setCurrentIndex(widget.currentIndex()+1)
-            OCR.run(self.files)
+
+            '''
             os.mkdir("info")
             inputScreen = Input()
             widget.addWidget(inputScreen)
             widget.setCurrentIndex(widget.currentIndex()+1)
+            '''
 
 
 class Input(QDialog):
@@ -65,12 +69,11 @@ class Input(QDialog):
 
     def openText(self):
         dlg = QFileDialog()
-        name = dlg.getOpenFileName(self, 'Open file', 'D:\\Project\\Ignitia-App\\OCR_and_Generator', "Text files (*.txt)")
+        name = dlg.getOpenFileName(self, 'Open file', 'D:\\Project\\Ignitia-Thachaina\\OCR_and_Generator', "Text files (*.txt)")
         print(name)
         self.fname = name[0]
 
         main.run(self.fname)
-        print("hello")
 
         popup = Final()
         widget.addWidget(popup)
@@ -83,7 +86,6 @@ class Final(QDialog):
         loadUi("final.ui", self)
 
         while not os.path.exists("image.png"):
-            print("hello")
             pass
 
         pix = QPixmap("image.png")
@@ -97,35 +99,53 @@ class Popup(QDialog):
     def __init__(self):
         super(Popup, self).__init__()
         loadUi("popup.ui", self)
+        print("hello")
 
         self.continuebutton.clicked.connect(self.proceed)
 
+        self.image = os.listdir("OCR_and_Generator/Characters")
+        self.maxlen = len(self.image)
+        self.index = 0
+
+        pix = QPixmap("OCR_and_Generator/Characters/" + self.image[self.index])
+        item = QtWidgets.QGraphicsPixmapItem(pix)
+        scene = QtWidgets.QGraphicsScene(self)
+        scene.addItem(item)
+
+        self.letterview.setScene(scene)
+
+        self.quelabel.setText("Is this " + self.image[self.index][0] + "?")
+        self.index += 1
+
     def proceed(self):
-        while not os.path.exists("OCR_and_Generator/done.txt"):
-            time.sleep(3)
-            name = ""
-            for name in os.listdir("OCR_and_Generator"):
-                if "char" in name:
-                    break
+        text = self.inputchar.text()
+        if text == " ":  # unrecognized
+            #print("OCR_and_Generator/Characters/" + self.image[self.index-1])
+            os.remove("OCR_and_Generator/Characters/" + self.image[self.index-1])
+        elif text == "":  # correct
+            pass
+        else:  # update
+            #print("OCR_and_Generator/Characters/" + self.image[self.index-1], "OCR_and_Generator/Characters/" + text + ".jpg")
+            os.rename("OCR_and_Generator/Characters/" + self.image[self.index-1], "OCR_and_Generator/Characters/" + text + ".jpg")
 
-            pix = QPixmap("OCR_and_Generator/" + name)
-            item = QtWidgets.QGraphicsPixmapItem(pix)
-            scene = QtWidgets.QGraphicsScene(self)
-            scene.addItem(item)
-            self.letterview.setScene(scene)
+        #self.quelabel.removeText()
 
-            self.quelabel.setText("Is this " + name[-1] + "?")
-            text = self.inputchar.text()
+        pix = QPixmap("OCR_and_Generator/Characters/" + self.image[self.index])
+        item = QtWidgets.QGraphicsPixmapItem(pix)
+        scene = QtWidgets.QGraphicsScene(self)
+        scene.addItem(item)
+        self.letterview.setScene(scene)
 
-            f = open("OCR_and_Generator/data.txt", "w")
-            if text == " ": # unrecognized
-                f.write("!")
-            elif text == "": # correct
-                f.write("NULL")
-            else: # update
-                f.write(text)
+        self.quelabel.setText("Is this " + self.image[self.index][0] + "?")
+        self.index += 1
 
-            f.close()
+        if self.index >= self.maxlen:
+            os.mkdir("info")
+            inputScreen = Input()
+            widget.addWidget(inputScreen)
+            widget.setCurrentIndex(widget.currentIndex() + 1)
+
+
 
 
 if __name__ == "__main__":
